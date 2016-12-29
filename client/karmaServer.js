@@ -4,7 +4,6 @@ var argv = require('yargs').argv;
 
 var Karma = require(argv.module);
 
-
 var testing = false;
 
 function unpause(){

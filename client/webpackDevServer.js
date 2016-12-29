@@ -2,12 +2,27 @@
 var path = require('path');
 var argv = require('yargs').argv;
 
+console.log('Starting Wepack Dev Server...');
+
 var WebpackDevServer = require(argv.devServerModule);
 var webpack = require(argv.module);
 
 var webpackConfig = require(path.resolve(argv.config));
 var myConfig = Object.create(webpackConfig);
 var compiler = webpack(myConfig);
+
+function createApiProxy() {
+  return argv.endpoints.split(' ')
+    .reduce((config, endpoint) => {
+      config[endpoint] = {
+        target: argv.proxyUrl,
+        changeOrigin: true,
+        secure: false,
+        headers: {'Authorization': `Bearer ${argv.apiKey}`}
+      }
+      return config;
+    }, {});
+}
 
 // setups up messages to be sent to parent with a given message,
 // calling handler to modify arguments for message values
@@ -49,9 +64,7 @@ var server = new WebpackDevServer(compiler, Object.assign({
   compress: true,
   // Set this if you want to enable gzip compression for assets
 
-  proxy: {
-    "**": "http://localhost:9090"
-  },
+  proxy: createApiProxy,
   // Set this if you want webpack-dev-server to delegate a single path to an arbitrary server.
   // Use "**" to proxy all paths to the specified server.
   // This is useful if you want to get rid of 'http://localhost:8080/' in script[src],
@@ -85,6 +98,10 @@ var server = new WebpackDevServer(compiler, Object.assign({
 
 server.listen(argv.port || 9000, "localhost", function(err) {
 	if(err) throw new Error("webpack-dev-server", err);
+});
+server.app.use((req, res, next) => {
+  console.log(`{#FF00FF-fg}{bold}${req.method}{/bold}{/#FF00FF-fg} - ${req.url}`);
+  next();
 });
 
 // todo: notify on proxy
