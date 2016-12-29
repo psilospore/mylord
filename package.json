@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "blessed": "^0.1.81",
+    "left-pad": "^1.1.3",
     "yargs": "^6.5.0"
   }
 }
