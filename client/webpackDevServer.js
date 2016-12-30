@@ -100,7 +100,10 @@ server.listen(argv.port || 9000, "localhost", function(err) {
 	if(err) throw new Error("webpack-dev-server", err);
 });
 server.app.use((req, res, next) => {
-  console.log(`{#FF00FF-fg}{bold}${req.method}{/bold}{/#FF00FF-fg} - ${req.url}`);
+  process.send({
+    type: 'proxy',
+    value: `{#FF00FF-fg}{bold}${req.method}{/bold}{/#FF00FF-fg} - ${req.url}`
+  });
   next();
 });
 
