@@ -1,3 +1,6 @@
+var proxy = require('http-proxy-middleware');
+var leftPad = require('left-pad');
+
 // webpack config, port
 var path = require('path');
 var argv = require('yargs').argv;
@@ -10,19 +13,6 @@ var webpack = require(argv.module);
 var webpackConfig = require(path.resolve(argv.config));
 var myConfig = Object.create(webpackConfig);
 var compiler = webpack(myConfig);
-
-function createApiProxy() {
-  return argv.endpoints.split(' ')
-    .reduce((config, endpoint) => {
-      config[endpoint] = {
-        target: argv.proxyUrl,
-        changeOrigin: true,
-        secure: false,
-        headers: {'Authorization': `Bearer ${argv.apiKey}`}
-      }
-      return config;
-    }, {});
-}
 
 // setups up messages to be sent to parent with a given message,
 // calling handler to modify arguments for message values
@@ -45,7 +35,7 @@ compiler.plugin('done', setupMessaging('broadcast')(stats => {
   };
 }));
 
-var server = new WebpackDevServer(compiler, Object.assign({
+var server = new WebpackDevServer(compiler, {
   publicPath: myConfig.output.publicPath,
 
   contentBase: (webpackConfig.devServer && webpackConfig.devServer.contentBase) || "app",
@@ -64,7 +54,7 @@ var server = new WebpackDevServer(compiler, Object.assign({
   compress: true,
   // Set this if you want to enable gzip compression for assets
 
-  proxy: createApiProxy,
+  //proxy: createApiProxy(),
   // Set this if you want webpack-dev-server to delegate a single path to an arbitrary server.
   // Use "**" to proxy all paths to the specified server.
   // This is useful if you want to get rid of 'http://localhost:8080/' in script[src],
@@ -94,19 +84,44 @@ var server = new WebpackDevServer(compiler, Object.assign({
     poll: 1000
   },
   stats: { colors: true }
-}, argv.proxy ? {proxy:{ "**": argv.proxy }} : {}));
+});
 
 server.listen(argv.port || 9000, "localhost", function(err) {
 	if(err) throw new Error("webpack-dev-server", err);
 });
-server.app.use((req, res, next) => {
-  process.send({
-    type: 'proxy',
-    value: `{#FF00FF-fg}{bold}${req.method}{/bold}{/#FF00FF-fg} - ${req.url}`
-  });
-  next();
+
+var proxyMiddleware = proxy({
+  target: argv.proxyUrl,
+  changeOrigin: true,
+  secure: false, //don't verify the SSL Certs
+  headers: {'Authorization': `Bearer ${argv.apiKey}`},
+  onProxyRes: function(proxyRes, req, res){
+    var reqDuration = new Date() - res._$_initialTime;
+    process.send({
+      type: 'proxy',
+      value: `${formatMethod(req.method)} ${req.url} {#888-fg}(${reqDuration}ms){/#888-fg}`
+    });
+  }
 });
 
-// todo: notify on proxy
+server.app.use('/api', (req, res, next) => {
+  res._$_initialTime = new Date();
+  proxyMiddleware(req, res, next);
+});
+
+function formatMethod(method) {
+  return `{${colorForMethod(method)}-fg}{bold}${leftPad(method, 7)}{/bold}{/${colorForMethod(method)}-fg}`;
+}
+
+function colorForMethod(method) {
+  switch (method) {
+    case 'GET': return '#FF00FF';
+    case 'POST': return '#7FFFD4';
+    case 'PUT': return '#7FFF00';
+    case 'DELETE': return '#FA8072';
+    case 'OPTIONS': return '#FFFF66';
+    default: return '#FFF';
+  }
+}
 
 // server.close();
