@@ -17,7 +17,6 @@ function onSuccess(){
     console.log('Running tests...');
     new Karma.Server({
       configFile: path.resolve(argv.config),
-      singleRun: true,
       colors: true
     }, function(exitCode){
       testing = false;
