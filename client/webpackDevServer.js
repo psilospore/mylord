@@ -48,7 +48,7 @@ compiler.plugin('done', setupMessaging('broadcast')(stats => {
 var server = new WebpackDevServer(compiler, Object.assign({
   publicPath: myConfig.output.publicPath,
 
-  contentBase: "app",
+  contentBase: (webpackConfig.devServer && webpackConfig.devServer.contentBase) || "app",
   // Can also be an array, or: contentBase: "http://localhost/",
 
   hot: true,
