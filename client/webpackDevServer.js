@@ -1,5 +1,6 @@
 var proxy = require('http-proxy-middleware');
-var leftPad = require('left-pad');
+var bodyParser = require('body-parser');
+var rightpad = require('right-pad');
 
 // webpack config, port
 var path = require('path');
@@ -90,6 +91,9 @@ server.listen(argv.port || 9000, "localhost", function(err) {
 	if(err) throw new Error("webpack-dev-server", err);
 });
 
+server.app.use(bodyParser.json());
+server.app.use(bodyParser.urlencoded({ extended: true }));
+
 var proxyMiddleware = proxy({
   target: argv.proxyUrl,
   changeOrigin: true,
@@ -101,6 +105,12 @@ var proxyMiddleware = proxy({
       type: 'proxy',
       value: `${formatMethod(req.method)} ${req.url} {#888-fg}(${reqDuration}ms){/#888-fg}`
     });
+    if(req.body && Object.keys(req.body).length !== 0) {
+      process.send({
+        type: 'proxy',
+        value: `{#888-fg}${JSON.stringify(req.body, 0, 2)}{/#888-fg}`
+      });
+    }
   }
 });
 
@@ -110,7 +120,7 @@ server.app.use('/api', (req, res, next) => {
 });
 
 function formatMethod(method) {
-  return `{${colorForMethod(method)}-fg}{bold}${leftPad(method, 7)}{/bold}{/${colorForMethod(method)}-fg}`;
+  return `{${colorForMethod(method)}-fg}{bold}${rightpad(method, 7, ' ')}{/bold}{/${colorForMethod(method)}-fg}`;
 }
 
 function colorForMethod(method) {
