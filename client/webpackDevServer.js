@@ -15,6 +15,27 @@ var webpackConfig = require(path.resolve(argv.config));
 var app = express();
 var compiler = webpack(webpackConfig);
 
+// setups up messages to be sent to parent with a given message,
+// calling handler to modify arguments for message values
+const setupMessaging = messageType => handler => arguments => {
+  //if this is a child process, process will have a 'send' function
+  if(process.send) {
+    process.send({
+      type: messageType,
+      value: handler(arguments)
+    });
+  }
+};
+
+compiler.plugin('compile', setupMessaging('broadcast')((stats) => ({message: 'build:start'})));
+// compiler.plugin('invalid', setupMessaging('invalid')(invalidArgs => ({message: 'invalid'})));
+compiler.plugin('done', setupMessaging('broadcast')(stats => {
+  return {
+    message: 'build:done',
+    success: stats.compilation.errors.length === 0
+  };
+}));
+
 var contentBase = (webpackConfig.devServer && webpackConfig.devServer.contentBase) || "app";
 
 app.use(WebpackDevMiddleware(compiler, {
@@ -26,7 +47,7 @@ app.use(WebpackDevMiddleware(compiler, {
 app.use(WebpackHotMiddleware(compiler));
 
 //hmm...
-app.get('*', function(req, res) {
+app.get('/', function(req, res) {
   res.sendFile(path.join(contentBase, 'index.html'));
 });
 
