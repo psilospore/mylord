@@ -1,0 +1,74 @@
+<html>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      color: #fff;
+    }
+    .login-box {
+      display: block;
+      margin: 0 auto;
+      background-color: #00d1b2;
+      border-radius: 4px;
+      width: 20em;
+      margin-top: 5em;
+      padding: 2em;
+    }
+    input, button {
+      font-size: 1em;
+      width: 100%;
+      display: block;
+      color: #fff;
+      border: 2px solid #fff;
+      background-color: rgba(0,0,0,0);
+      padding: .5em;
+    }
+    input {
+      margin-bottom: 1em;
+    }
+    textarea:focus, input:focus, button:focus{
+      outline: none;
+      border-color: #fff860;
+    }
+    input::-webkit-input-placeholder {
+      color: #ddd;
+      font-style: italic;
+    }
+    form div {
+      margin-top: 1em;
+    }
+  </style>
+  <script>
+    function wut(e) {
+      const getVal = id => document.getElementById(id).value
+      const data = ['username', 'password'].reduce((obj, key) => Object.assign({
+        [key]:getVal(key)
+      }, obj), {});
+      console.log('submitting data:', data);
+      const encode = obj => Object.keys(obj).map(key => {
+        return encodeURIComponent(key) + '=' + encodeURIComponent(obj[key]);
+      }).join('&');
+
+      fetch(`/api/v2/sessions/login?${encode(data)}`, {
+        method: 'POST',
+        credentials: 'include'
+      }).then(resp => {
+        if(resp.status === 202){
+          throw new Error("lolz, login incorrect");
+        } else {
+          window.location = '/';
+        }
+      }).catch(() => {
+        //todo: how to alert?
+        alert('Invalid login');
+      });
+      e.preventDefault();
+    }
+  </script>
+  <form class='login-box' onsubmit='wut(event)' action='', method="POST">
+    <input id='username' type='text' name='username' placeholder='username' />
+    <input id='password' type='password' name='password' placeholder='password' />
+    <button type='submit'>log in</button>
+    <div><%= proxy %></div>
+  </form>
+
+</html>

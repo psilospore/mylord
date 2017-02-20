@@ -2,6 +2,7 @@ var proxy = require('http-proxy-middleware');
 var bodyParser = require('body-parser');
 var rightpad = require('right-pad');
 var express = require('express');
+var cookieParser = require('cookie-parser');
 
 // webpack config, port
 var path = require('path');
@@ -14,6 +15,8 @@ var webpackConfig = require(path.resolve(argv.config));
 
 var app = express();
 var compiler = webpack(webpackConfig);
+
+app.use(cookieParser());
 
 // setups up messages to be sent to parent with a given message,
 // calling handler to modify arguments for message values
@@ -46,9 +49,20 @@ app.use(WebpackDevMiddleware(compiler, {
 
 app.use(WebpackHotMiddleware(compiler));
 
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, ''));
+
 //hmm...
 app.get('/', function(req, res) {
-  res.sendFile(path.join(contentBase, 'index.html'));
+  if(req.cookies.UG){
+    res.sendFile(path.join(contentBase, 'index.html'));
+  } else {
+    res.redirect('/login');
+  }
+});
+
+app.get('/login', function(req, res) {
+  res.render('login', { proxy: argv.proxyUrl });
 });
 
 app.use(bodyParser.json());
@@ -58,17 +72,27 @@ app.listen(argv.port || 9000, "localhost", function(err) {
 	if(err) throw new Error("webpack-dev-server", err);
 });
 
+const replaceAll = (str, search, replacement) => (
+  str.replace(new RegExp(search, 'g'), replacement)
+);
+
 var proxyMiddleware = proxy({
   target: argv.proxyUrl,
   changeOrigin: true,
   secure: false, //don't verify the SSL Certs
-  headers: {'Authorization': `Bearer ${argv.apiKey}`},
+  cookieDomainRewrite: true,
   onProxyRes: function(proxyRes, req, res){
+
     var reqDuration = new Date() - res._$_initialTime;
     process.send({
       type: 'proxy',
       value: `${formatMethod(req.method)} ${req.url} {#888-fg}(${reqDuration}ms){/#888-fg}`
     });
+
+    if(proxyRes.headers['set-cookie']){
+        proxyRes.headers['set-cookie'] = proxyRes.headers['set-cookie'].map(header => replaceAll(header, 'Secure; ', ''));
+    }
+
     if(req.body && Object.keys(req.body).length !== 0) {
       process.send({
         type: 'proxy',
