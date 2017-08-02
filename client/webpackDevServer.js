@@ -99,6 +99,12 @@ var proxyMiddleware = proxy({
         value: `{#888-fg}${JSON.stringify(req.body, 0, 2)}{/#888-fg}`
       });
     }
+  },
+  onProxyReq: function(proxyReq, req, res) {
+    if (req.method == "POST" && req.body) {
+      proxyReq.write(JSON.stringify(req.body));
+      proxyReq.end();
+    }
   }
 });
 
