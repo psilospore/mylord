@@ -62,7 +62,13 @@ app.get('/', function(req, res) {
 });
 
 app.get('/login', function(req, res) {
-  res.render('login', { proxy: argv.proxyUrl });
+  const cookies = Object.keys(req.cookies).reduce((values, key) =>
+    values.concat({key, value: req.cookies[key]}), []);
+
+  res.render('login', {
+    proxy: argv.proxyUrl,
+    reqCookies: cookies
+  });
 });
 
 app.use(bodyParser.json());
@@ -90,7 +96,7 @@ var proxyMiddleware = proxy({
     });
 
     if(proxyRes.headers['set-cookie']){
-        proxyRes.headers['set-cookie'] = proxyRes.headers['set-cookie'].map(header => replaceAll(header, 'Secure; ', ''));
+        proxyRes.headers['set-cookie'] = proxyRes.headers['set-cookie'].map(header => replaceAll(header, 'Secure; ', '')).map(header => replaceAll(header, 'HttpOnly', ''));
     }
 
     if(req.body && Object.keys(req.body).length !== 0) {

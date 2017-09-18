@@ -36,6 +36,9 @@
     form div {
       margin-top: 1em;
     }
+    .cookie .key {
+      color: #8d2fd0;
+    }
   </style>
   <script>
     function wut(e) {
@@ -53,7 +56,8 @@
         credentials: 'include'
       }).then(resp => {
         if(resp.status === 202){
-          throw new Error("lolz, login incorrect");
+          // throw new Error("lolz, login incorrect");
+          alert('Invalid login, since we got a 202');
         } else {
           window.location = '/';
         }
@@ -69,6 +73,13 @@
     <input id='password' type='password' name='password' placeholder='password' />
     <button type='submit'>log in</button>
     <div><%= proxy %></div>
+    
+    <% for (var i = 0; i < reqCookies.length; i++) { %>
+      <div class='cookie'>
+        <span class='key'><%= reqCookies[i].key %></span>
+        <span class='value'><%= reqCookies[i].value %></span>
+      </div>
+    <% } %>
   </form>
 
 </html>
