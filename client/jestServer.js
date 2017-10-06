@@ -2,7 +2,7 @@ var path = require('path');
 var argv = require('yargs').argv;
 
 
-var Karma = require(argv.module);
+var Jest = require(argv.module);
 
 var testing = false;
 
@@ -11,17 +11,18 @@ function unpause(){
 }
 
 function onSuccess(){
-  // TODO Placeholder copied from karamaServer.js
   unpause();
   if(!testing) {
     testing = true;
-    console.log('Running tests...');
-    new Jest.Server({
-      configFile: path.resolve(argv.config),
-      colors: true
-    }, function(exitCode){
+    console.log('Running tests...', Jest, 'argv', argv, 'Jest.run', Jest.run);
+    Jest.runCLI({
+      config: path.resolve(argv.config)
+    }, function (blah) {
+      //TODO what is this supposed to be? Get an error otherwise and theirs no docs
+    }).then(function (result) {
+      console.log('Success?', result.success);
       testing = false;
-    }).start();
+    });
   } else {
     //todo: how to cancel?
   }
