@@ -28,6 +28,9 @@ function runJest() {
   p.stdout.pipe(process.stdout);
   // Not sure why passing tests are coming out of stderr seems to happen with Jest.runCLI as well
   p.stderr.pipe(process.stdout);
+  p.on('exit', function(){
+    testing = false;
+  });
 }
 
 function onSuccess(){
