@@ -1,8 +1,10 @@
 
+# MyLord
 ![myLorde screenshot](/screen.jpg?raw=true "myLorde in action")
 
-Use like:
+## Configuration
 
+```
     var server = new MyLordeServer({
       port: 9000,
       webpackConfig: './webpack.config.js',
@@ -27,3 +29,19 @@ Use like:
     });
 
     server.run();
+```
+
+### Jest
+If you choose to use jest instead then structure your package.json in a similar manager:
+
+```
+  "scripts": {
+    ...
+    "jest": "jest --colors --notify --config config/jest.conf.js"
+  }
+  "jest": {
+    "colors": true,
+    "verbose": true,
+    "testRegex": ".*.spec.js$"
+  },
+```

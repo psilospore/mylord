@@ -1,39 +1,45 @@
 var path = require('path');
 var argv = require('yargs').argv;
-var TestEngine = require(argv.module);
-var testEngineName = require(argv.module + '/package.json').name;
+var child_process = require('child_process');
+
+var Karma = null;
+if (argv.module) {
+  Karma = require(argv.module);
+}
 
 var testing = false;
 
-function unpause(){
+function unpause() {
   process.send({ type: 'unpause' });
+}
+
+function runKarma() {
+  new Karma.Server({
+    configFile: path.resolve(argv.config),
+    colors: true
+  }, function(exitCode){
+    testing = false;
+  }).start();
+}
+
+function runJest() {
+  testing = true;
+  var p = child_process.exec('npm run jest');
+  p.stdout.pipe(process.stdout);
+  // Not sure why passing tests are coming out of stderr seems to happen with Jest.runCLI as well
+  p.stderr.pipe(process.stdout);
 }
 
 function onSuccess(){
   unpause();
   if(!testing) {
     testing = true;
-    
-    if (TestEngineName === 'jest') {
-      TestEngineName.runCLI({
-        config: path.resolve(argv.config)
-      }, function (blah) {
-        //TODO what is this supposed to be? Get an error otherwise and there's no docs
-      }).then(function (result) {
-        console.log('Success?', result.success);
-        testing = false;
-      });
-    } else if (TestEngineName === 'karma') {
-      new TestEngineName.Server({
-        configFile: path.resolve(argv.config),
-        colors: true
-      }, function(exitCode){
-        testing = false;
-      }).start();
+    if (Karma) {
+      runKarma();
     } else {
-      throw new Error('Missing karma or jest dependency');
+      runJest();
     }
-
+    console.log('Running tests...');
   } else {
     //todo: how to cancel?
   }
