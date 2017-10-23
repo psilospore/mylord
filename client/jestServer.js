@@ -1,8 +1,7 @@
 var path = require('path');
 var argv = require('yargs').argv;
 
-
-var Jest = require(argv.module);
+var child_process = require('child_process');
 
 var testing = false;
 
@@ -14,15 +13,11 @@ function onSuccess(){
   unpause();
   if(!testing) {
     testing = true;
-    console.log('Running tests...', Jest, 'argv', argv, 'Jest.run', Jest.run);
-    Jest.runCLI({
-      config: path.resolve(argv.config)
-    }, function (blah) {
-      //TODO what is this supposed to be? Get an error otherwise and theirs no docs
-    }).then(function (result) {
-      console.log('Success?', result.success);
-      testing = false;
-    });
+    // console.log('Running tests...', Jest, 'argv', argv, 'Jest.run', Jest.run);
+    var p = child_process.exec('npm run jest');
+    p.stdout.pipe(process.stdout);
+    // Not sure why passing tests are coming out of stderr seems to happen with Jest.runCLI as well
+    p.stderr.pipe(process.stdout);
   } else {
     //todo: how to cancel?
   }
